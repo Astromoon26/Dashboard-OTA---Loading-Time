@@ -1,0 +1,38 @@
+name: 🔄 Auto Update Dashboard
+
+on:
+  schedule:
+    - cron: "0 23 * * *"
+
+  workflow_dispatch:
+
+jobs:
+  update-dashboard:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 📊 Fetch data dari Google Sheets & update dashboard
+        env:
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          SHEET_NAME: ${{ secrets.SHEET_NAME }}
+        run: python fetch_sheets.py
+
+      - name: 💾 Commit & push jika ada perubahan
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dashboard_ota.html
+          git diff --staged --quiet || git commit -m "🤖 Auto-update dashboard [$(date +'%Y-%m-%d %H:%M UTC')]"
+          git push
