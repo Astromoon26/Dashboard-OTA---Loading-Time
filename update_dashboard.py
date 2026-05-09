@@ -71,15 +71,15 @@ def process(rows):
         cin_s   = row.get("Checkin", "").strip()
         cout_s  = row.get("Checkout", "").strip()
 
-        if not (site and moda and batch and month and req_s and cout_s):
+        if not (site and moda and batch and month and req_s and cin_s):
             continue
 
         req_dt  = parse_dt(req_s)
-        cout_dt = parse_dt(cout_s)
-        if not req_dt or not cout_dt:
+        cin_dt = parse_dt(cin_s)
+        if not req_dt or not cin_dt:
             continue
 
-        ota  = cout_dt <= req_dt
+        ota  = cin_dt <= req_dt
         day  = req_dt.day          # pakai hari dari Req Stuffing
 
         sites.add(site); months.add(month); modas.add(moda); batches.add(batch)
