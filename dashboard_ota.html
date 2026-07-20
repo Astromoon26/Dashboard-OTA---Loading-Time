@@ -269,6 +269,14 @@ tbody td{padding:6px 9px;color:#cbd5e1;}
   </div>
   <div class="filter-divider"></div>
   <div class="filter-group">
+    <label>BU</label>
+    <div class="ms-wrap" id="msBU">
+      <button class="ms-trigger" onclick="toggleMS('msBU')" type="button"><span class="ms-label">Semua BU</span><span class="ms-caret">▾</span></button>
+      <div class="ms-body"></div>
+    </div>
+  </div>
+  <div class="filter-divider"></div>
+  <div class="filter-group">
     <label>Vendor</label>
     <div class="ms-wrap" id="msVendor">
       <button class="ms-trigger" onclick="toggleMS('msVendor')" type="button"><span class="ms-label">Semua Vendor</span><span class="ms-caret">▾</span></button>
@@ -431,6 +439,14 @@ tbody td{padding:6px 9px;color:#cbd5e1;}
   </div>
   <div class="filter-divider"></div>
   <div class="filter-group">
+    <label>BU</label>
+    <div class="ms-wrap" id="lpMsBU">
+      <button class="ms-trigger" onclick="toggleMS('lpMsBU')" type="button"><span class="ms-label">Semua BU</span><span class="ms-caret">▾</span></button>
+      <div class="ms-body"></div>
+    </div>
+  </div>
+  <div class="filter-divider"></div>
+  <div class="filter-group">
     <label>Vendor</label>
     <div class="ms-wrap" id="lpMsVendor">
       <button class="ms-trigger" onclick="toggleMS('lpMsVendor')" type="button"><span class="ms-label">Semua Vendor</span><span class="ms-caret">▾</span></button>
@@ -550,6 +566,14 @@ tbody td{padding:6px 9px;color:#cbd5e1;}
     <label>Dist. Channel</label>
     <div class="ms-wrap" id="frMsDC">
       <button class="ms-trigger" onclick="toggleMS('frMsDC')" type="button"><span class="ms-label">Semua DC</span><span class="ms-caret">▾</span></button>
+      <div class="ms-body"></div>
+    </div>
+  </div>
+  <div class="filter-divider"></div>
+  <div class="filter-group">
+    <label>BU</label>
+    <div class="ms-wrap" id="frMsBU">
+      <button class="ms-trigger" onclick="toggleMS('frMsBU')" type="button"><span class="ms-label">Semua BU</span><span class="ms-caret">▾</span></button>
       <div class="ms-body"></div>
     </div>
   </div>
@@ -705,7 +729,7 @@ function parseDT(s) {
 // ── BUILD D FROM CSV ROWS ───────────────────────────────────────────────────
 function buildD(rows) {
   const MON_ORDER = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const sites=new Set(), months=new Set(), modas=new Set(), batches=new Set();
+  const sites=new Set(), months=new Set(), modas=new Set(), batches=new Set(), bus=new Set();
   const summary={}, daily={}, vendor={}, detail={};
   let skipped = 0;
 
@@ -721,6 +745,7 @@ function buildD(rows) {
     const cinStr = row['Checkin']       || '';
     const coutStr= row['Checkout']      || '';
     const month  = row['Month']         || '';
+    const bu     = row['BU']            || '';
 
     if (!site || !month || !moda || !batch || !reqStr || !cinStr) { skipped++; return; }
     const reqDT  = parseDT(reqStr);
@@ -729,9 +754,9 @@ function buildD(rows) {
 
     const ota = cinDT <= reqDT;
     const day = reqDT.getDate();
-    sites.add(site); months.add(month); modas.add(moda); batches.add(batch);
+    sites.add(site); months.add(month); modas.add(moda); batches.add(batch); bus.add(bu);
 
-    const sk = site+'|'+month+'|'+moda+'|'+batch;
+    const sk = site+'|'+month+'|'+moda+'|'+batch+'|'+bu;
     const dk = sk+'|'+day;
     const vk = sk+'|'+vdr;
 
@@ -752,8 +777,9 @@ function buildD(rows) {
   const sortedMonths  = [...months].sort((a,b)=>MON_ORDER.indexOf(a)-MON_ORDER.indexOf(b));
   const sortedModas   = [...modas].sort();
   const sortedBatches = [...batches].sort();
+  const sortedBus     = [...bus].sort();
   console.log('OTA build done. Rows:', rows.length, 'Skipped:', skipped, 'Summary keys:', Object.keys(summary).length);
-  return {sites:sortedSites,months:sortedMonths,modas:sortedModas,batches:sortedBatches,summary,daily,vendor,detail};
+  return {sites:sortedSites,months:sortedMonths,modas:sortedModas,batches:sortedBatches,bus:sortedBus,summary,daily,vendor,detail};
 }
 
 // ── FETCH & INIT ────────────────────────────────────────────────────────────
@@ -814,11 +840,11 @@ function reloadData() {
   // Reset OTA + LP + FR filter dropdowns
   const msMap = {
     msSite:'Semua Site',msMonth:'Semua Bulan',msModa:'Semua Moda',
-    msBatch:'Semua Batch',msVendor:'Semua Vendor',msDate:'Semua Tgl',
-    lpMsSite:'Semua Site',lpMsMonth:'Semua Bulan',lpMsArmada:'Semua Armada',
+    msBatch:'Semua Batch',msBU:'Semua BU',msVendor:'Semua Vendor',msDate:'Semua Tgl',
+    lpMsSite:'Semua Site',lpMsMonth:'Semua Bulan',lpMsArmada:'Semua Armada',lpMsBU:'Semua BU',
     lpMsVendor:'Semua Vendor',lpMsDate:'Semua Tgl',
     frMsSite:'Semua Site',frMsMonth:'Semua Bulan',frMsModa:'Semua Moda',
-    frMsBatch:'Semua Batch',frMsDC:'Semua DC',frMsVendor:'Semua Vendor',frMsDate:'Semua Tgl'
+    frMsBatch:'Semua Batch',frMsDC:'Semua DC',frMsBU:'Semua BU',frMsVendor:'Semua Vendor',frMsDate:'Semua Tgl'
   };
   Object.entries(msMap).forEach(([id,lbl])=>{
     const el = document.getElementById(id);
@@ -848,6 +874,7 @@ function getF() {
     month:  getMS('msMonth'),
     moda:   getMS('msModa'),
     batch:  getMS('msBatch'),
+    bu:     getMS('msBU'),
     vendor: getMS('msVendor'),
     date:   getMS('msDate'),
   };
@@ -858,7 +885,8 @@ function matchKey(k, f) {
   return matchVal(p[0], f.site)
       && matchVal(p[1], f.month)
       && matchVal(p[2], f.moda)
-      && matchVal(p[3], f.batch);
+      && matchVal(p[3], f.batch)
+      && matchVal(p[4], f.bu);
 }
 
 function matchVKey(k, f) {
@@ -867,7 +895,8 @@ function matchVKey(k, f) {
       && matchVal(p[1], f.month)
       && matchVal(p[2], f.moda)
       && matchVal(p[3], f.batch)
-      && matchVal(p[4], f.vendor);
+      && matchVal(p[4], f.bu)
+      && matchVal(p[5], f.vendor);
 }
 
 function matchDayKey(k, f) {
@@ -876,7 +905,8 @@ function matchDayKey(k, f) {
       && matchVal(p[1], f.month)
       && matchVal(p[2], f.moda)
       && matchVal(p[3], f.batch)
-      && matchVal(String(p[4]), f.date);
+      && matchVal(p[4], f.bu)
+      && matchVal(String(p[5]), f.date);
 }
 
 // ── POPULATE FILTERS ─────────────────────────────────────────────────────────
@@ -885,12 +915,13 @@ function populateStatic() {
   buildMS('msMonth',  D.months,   'Bulan');
   buildMS('msModa',   D.modas,    'Moda');
   buildMS('msBatch',  D.batches,  'Batch');
+  buildMS('msBU',     D.bus,      'BU');
 }
 
 function populateVendors(f) {
   const cur = getMS('msVendor');
   const seen = new Set();
-  Object.keys(D.vendor).forEach(k=>{ if(matchKey(k,f)) seen.add(k.split('|')[4]); });
+  Object.keys(D.vendor).forEach(k=>{ if(matchKey(k,f)) seen.add(k.split('|')[5]); });
   const opts = [...seen].sort();
   buildMS('msVendor', opts, 'Vendor');
   // Restore previous selection where still valid
@@ -907,7 +938,7 @@ function populateVendors(f) {
 function populateDays(f) {
   const cur = getMS('msDate');
   const seen = new Set();
-  Object.keys(D.daily).forEach(k=>{ if(matchKey(k,f)) seen.add(parseInt(k.split('|')[4])); });
+  Object.keys(D.daily).forEach(k=>{ if(matchKey(k,f)) seen.add(parseInt(k.split('|')[5])); });
   const opts = [...seen].sort((a,b)=>a-b);
   buildMS('msDate', opts.map(String), 'Tgl');
   // Override labels to show "Tgl N"
@@ -931,7 +962,7 @@ function onFilterChange() {
 }
 
 function resetFilters() {
-  ['msSite','msMonth','msModa','msBatch','msVendor','msDate'].forEach(id => {
+  ['msSite','msMonth','msModa','msBatch','msBU','msVendor','msDate'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.querySelectorAll('input').forEach(cb => { cb.checked=false; cb.indeterminate=false; });
@@ -939,7 +970,7 @@ function resetFilters() {
     const lbl = el.querySelector('.ms-label');
     if (lbl) {
       const map = {msSite:'Semua Site',msMonth:'Semua Bulan',msModa:'Semua Moda',
-                   msBatch:'Semua Batch',msVendor:'Semua Vendor',msDate:'Semua Tgl'};
+                   msBatch:'Semua Batch',msBU:'Semua BU',msVendor:'Semua Vendor',msDate:'Semua Tgl'};
       lbl.textContent = map[id] || 'Semua';
     }
   });
@@ -1015,7 +1046,7 @@ function getVendorStats(f) {
   } else {
     // no date filter: use aggregated vendor data, apply vendor filter
     Object.entries(D.vendor).forEach(([k,v])=>{
-      const ve=k.split('|')[4];
+      const ve=k.split('|')[5];
       if(matchKey(k,f) && matchVal(ve,f.vendor)){
         if(!vm[ve]) vm[ve]={ot:0,late:0};
         vm[ve].ot+=v.ot; vm[ve].late+=v.late;
@@ -1738,7 +1769,7 @@ let LP = { sites:[], months:[], armadas:[], vendors:[], summary:{}, daily:{}, ve
 
 function buildLP(rows) {
   const MON_ORDER = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const sites=new Set(), months=new Set(), armadas=new Set(), vendors=new Set();
+  const sites=new Set(), months=new Set(), armadas=new Set(), vendors=new Set(), bus=new Set();
   const summary={}, daily={}, vendor={}, detail={};
   let skipped = 0;
 
@@ -1751,6 +1782,7 @@ function buildLP(rows) {
     const month   = row['Month']   || '';
     const vdr     = row['Vendor']  || '';
     const noSI    = row['No SI']   || '';
+    const bu      = row['BU']      || '';
     const reqStr  = row['Req Stuffing'] || '';
     const cinStr  = row['Checkin']      || '';
     const coutStr = row['Checkout']     || '';
@@ -1785,9 +1817,9 @@ function buildLP(rows) {
     const ontime  = target !== null ? loadingMin <= target : null;
     const day     = openDT.getDate();
 
-    sites.add(siteKey); months.add(month); armadas.add(armada); vendors.add(vdr);
+    sites.add(siteKey); months.add(month); armadas.add(armada); vendors.add(vdr); bus.add(bu);
 
-    const sk = siteKey+'|'+month+'|'+armada;
+    const sk = siteKey+'|'+month+'|'+armada+'|'+bu;
     const dk = sk+'|'+day;
     const vk = sk+'|'+vdr;
 
@@ -1813,10 +1845,11 @@ function buildLP(rows) {
   const sortedMonths  = [...months].sort((a,b)=>['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].indexOf(a)-['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].indexOf(b));
   const sortedArmadas = [...armadas].sort((a,b)=>{const ai=LP_ARM_ORDER.indexOf(a),bi=LP_ARM_ORDER.indexOf(b);if(ai<0&&bi<0)return a.localeCompare(b);if(ai<0)return 1;if(bi<0)return -1;return ai-bi;});
   const sortedVendors = [...vendors].sort();
+  const sortedBus     = [...bus].sort();
 
   console.log('[LP] Sites:',sortedSites,'Armadas:',[...armadas],'Skipped:',skipped,'Summary keys:',Object.keys(summary).length);
   if(_unknownArmadaRaw.size>0) console.warn('[LP] Raw armada values tidak ter-mapping:',[..._unknownArmadaRaw]);
-  return {sites:sortedSites,months:sortedMonths,armadas:sortedArmadas,vendors:sortedVendors,summary,daily,vendor,detail};
+  return {sites:sortedSites,months:sortedMonths,armadas:sortedArmadas,vendors:sortedVendors,bus:sortedBus,summary,daily,vendor,detail};
 }
 
 // ── LP FILTER HELPERS ────────────────────────────────────────────────────────
@@ -1825,6 +1858,7 @@ function getLPF() {
     site:   getMS('lpMsSite'),
     month:  getMS('lpMsMonth'),
     armada: getMS('lpMsArmada'),
+    bu:     getMS('lpMsBU'),
     vendor: getMS('lpMsVendor'),
     date:   getMS('lpMsDate'),
   };
@@ -1832,15 +1866,15 @@ function getLPF() {
 
 function matchLPKey(k, f) {
   const p = k.split('|');
-  return matchVal(p[0],f.site) && matchVal(p[1],f.month) && matchVal(p[2],f.armada);
+  return matchVal(p[0],f.site) && matchVal(p[1],f.month) && matchVal(p[2],f.armada) && matchVal(p[3],f.bu);
 }
 function matchLPDayKey(k, f) {
   const p = k.split('|');
-  return matchVal(p[0],f.site) && matchVal(p[1],f.month) && matchVal(p[2],f.armada) && matchVal(String(p[3]),f.date);
+  return matchVal(p[0],f.site) && matchVal(p[1],f.month) && matchVal(p[2],f.armada) && matchVal(p[3],f.bu) && matchVal(String(p[4]),f.date);
 }
 function matchLPVKey(k, f) {
   const p = k.split('|');
-  return matchVal(p[0],f.site) && matchVal(p[1],f.month) && matchVal(p[2],f.armada) && matchVal(p[3],f.vendor);
+  return matchVal(p[0],f.site) && matchVal(p[1],f.month) && matchVal(p[2],f.armada) && matchVal(p[3],f.bu) && matchVal(p[4],f.vendor);
 }
 
 function needDetailLP(f) { return f.vendor !== 'ALL' || f.date !== 'ALL'; }
@@ -1891,7 +1925,7 @@ function getLPDayStats(f) {
   } else {
     Object.entries(LP.daily).forEach(([k,v])=>{
       if(matchLPDayKey(k,f)){
-        const day=parseInt(k.split('|')[3]);
+        const day=parseInt(k.split('|')[4]);
         if(!map[day]) map[day]={total:0,ontime:0};
         map[day].total+=v.total; map[day].ontime+=v.ontime;
       }
@@ -1973,7 +2007,7 @@ function getLPVendorStats(f) {
   } else {
     Object.entries(LP.vendor).forEach(([k,v])=>{
       if(matchLPKey(k,{...f,vendor:'ALL'})){
-        const vdr=k.split('|')[3];
+        const vdr=k.split('|')[4];
         if(matchVal(vdr,f.vendor)){
           if(!vm[vdr]) vm[vdr]={total:0,ontime:0,sumLoading:0};
           vm[vdr].total+=v.total; vm[vdr].ontime+=v.ontime; vm[vdr].sumLoading+=v.sumLoading;
@@ -2180,6 +2214,7 @@ function initLP() {
   buildMS('lpMsSite',   LP.sites,   'Site');
   buildMS('lpMsMonth',  LP.months,  'Bulan');
   buildMS('lpMsArmada', LP.armadas, 'Armada');
+  buildMS('lpMsBU',     LP.bus,     'BU');
   populateLPVendors(getLPF());
   populateLPDays(getLPF());
   lpApplyFilters();
@@ -2190,7 +2225,7 @@ function initLP() {
 function populateLPVendors(f) {
   const cur=getMS('lpMsVendor');
   const seen=new Set();
-  Object.keys(LP.vendor).forEach(k=>{if(matchLPKey(k,{...f,vendor:'ALL',armada:f.armada}))seen.add(k.split('|')[3]);});
+  Object.keys(LP.vendor).forEach(k=>{if(matchLPKey(k,{...f,vendor:'ALL',armada:f.armada}))seen.add(k.split('|')[4]);});
   buildMS('lpMsVendor',[...seen].sort(),'Vendor');
   if(cur!=='ALL'){
     const el=document.getElementById('lpMsVendor');
@@ -2208,7 +2243,7 @@ function populateLPVendors(f) {
 function populateLPDays(f) {
   const cur=getMS('lpMsDate'); // simpan seleksi sebelumnya
   const seen=new Set();
-  Object.keys(LP.daily).forEach(k=>{if(matchLPKey(k,f))seen.add(parseInt(k.split('|')[3]));});
+  Object.keys(LP.daily).forEach(k=>{if(matchLPKey(k,f))seen.add(parseInt(k.split('|')[4]));});
   const opts=[...seen].sort((a,b)=>a-b);
   buildMS('lpMsDate',opts.map(String),'Tgl');
   const el=document.getElementById('lpMsDate');
@@ -2233,12 +2268,12 @@ function onLPFilterChange() {
 }
 
 function resetLPFilters() {
-  ['lpMsSite','lpMsMonth','lpMsArmada','lpMsVendor','lpMsDate'].forEach(id=>{
+  ['lpMsSite','lpMsMonth','lpMsArmada','lpMsBU','lpMsVendor','lpMsDate'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     el.querySelectorAll('input').forEach(cb=>{cb.checked=false;cb.indeterminate=false;});
     el.classList.remove('ms-active');
     const lbl=el.querySelector('.ms-label');
-    if(lbl){const map={lpMsSite:'Semua Site',lpMsMonth:'Semua Bulan',lpMsArmada:'Semua Armada',lpMsVendor:'Semua Vendor',lpMsDate:'Semua Tgl'};lbl.textContent=map[id]||'Semua';}
+    if(lbl){const map={lpMsSite:'Semua Site',lpMsMonth:'Semua Bulan',lpMsArmada:'Semua Armada',lpMsBU:'Semua BU',lpMsVendor:'Semua Vendor',lpMsDate:'Semua Tgl'};lbl.textContent=map[id]||'Semua';}
   });
   lpApplyFilters();
 }
@@ -2248,6 +2283,7 @@ function buildLPTag(f) {
   const s=fmtFilter(f.site);    if(s) pts.push(s);
   const m=fmtFilter(f.month);   if(m) pts.push(m);
   const a=fmtFilter(f.armada);  if(a) pts.push(a);
+  const bu=fmtFilter(f.bu);     if(bu) pts.push(bu);
   const v=fmtFilter(f.vendor);  if(v) pts.push(v);
   const d=fmtFilter(f.date,'Tgl '); if(d) pts.push(d);
   return pts.length?pts.join(' · '):'All Filter';
@@ -2300,11 +2336,11 @@ function switchTab(tabId, btn) {
 // FULFILLMENT RATE
 // ══════════════════════════════════════════════════════════════════════════════
 
-let FR = {sites:[], months:[], modas:[], batches:[], dcs:[], vendors:[], summary:{}, daily:{}, vendor:{}, detail:{}};
+let FR = {sites:[], months:[], modas:[], batches:[], dcs:[], bus:[], vendors:[], summary:{}, daily:{}, vendor:{}, detail:{}};
 
 function buildFR(rows) {
   const MON_ORDER = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const sites=new Set(), months=new Set(), modas=new Set(), batches=new Set(), dcs=new Set(), vendors=new Set();
+  const sites=new Set(), months=new Set(), modas=new Set(), batches=new Set(), dcs=new Set(), bus=new Set(), vendors=new Set();
   const summary={}, daily={}, vendor={}, detail={};
   let skipped = 0;
 
@@ -2319,6 +2355,7 @@ function buildFR(rows) {
     const reqStr = row['Req Stuffing']|| '';
     const cinStr = row['Checkin']     || '';
     const month  = row['Month']       || '';
+    const bu     = row['BU']          || '';
 
     if (!site || !month || !batch || !reqStr || !cinStr || !tujuan) { skipped++; return; }
     const reqDT = parseDT(reqStr);
@@ -2332,12 +2369,12 @@ function buildFR(rows) {
     const day = reqDT.getDate();
 
     const dc = tujuan; // Distribution Channel = Tujuan DC
-    sites.add(site); months.add(month); modas.add(moda); batches.add(batch); dcs.add(dc); vendors.add(vdr);
+    sites.add(site); months.add(month); modas.add(moda); batches.add(batch); dcs.add(dc); bus.add(bu); vendors.add(vdr);
 
-    // key: site|month|moda|batch|dc
-    const sk = site+'|'+month+'|'+moda+'|'+batch+'|'+dc;
+    // key: site|month|moda|batch|dc|bu
+    const sk = site+'|'+month+'|'+moda+'|'+batch+'|'+dc+'|'+bu;
     const dk = sk+'|'+day;
-    const vk = sk+'|'+vdr; // vendor key: site|month|moda|batch|dc|vendor
+    const vk = sk+'|'+vdr; // vendor key: site|month|moda|batch|dc|bu|vendor
 
     if (!summary[sk]) summary[sk]={total:0,hit:0,mis:0};
     summary[sk].total++; if(hit) summary[sk].hit++; else summary[sk].mis++;
@@ -2357,9 +2394,10 @@ function buildFR(rows) {
   const sortedModas   = [...modas].sort();
   const sortedBatches = [...batches].sort();
   const sortedDCs     = [...dcs].sort();
+  const sortedBus     = [...bus].sort();
   const sortedVendors = [...vendors].sort();
   console.log('[FR] Build done. Skipped:', skipped, 'Summary keys:', Object.keys(summary).length);
-  return {sites:sortedSites, months:sortedMonths, modas:sortedModas, batches:sortedBatches, dcs:sortedDCs, vendors:sortedVendors, summary, daily, vendor, detail};
+  return {sites:sortedSites, months:sortedMonths, modas:sortedModas, batches:sortedBatches, dcs:sortedDCs, bus:sortedBus, vendors:sortedVendors, summary, daily, vendor, detail};
 }
 
 // ── FR FILTER HELPERS ─────────────────────────────────────────────────────────
@@ -2370,6 +2408,7 @@ function getFRF() {
     moda:   getMS('frMsModa'),
     batch:  getMS('frMsBatch'),
     dc:     getMS('frMsDC'),
+    bu:     getMS('frMsBU'),
     vendor: getMS('frMsVendor'),
     date:   getMS('frMsDate'),
   };
@@ -2377,20 +2416,20 @@ function getFRF() {
 
 function matchFRKey(k, f) {
   const p = k.split('|');
-  // key: site|month|moda|batch|dc
-  return matchVal(p[0],f.site) && matchVal(p[1],f.month) && matchVal(p[2],f.moda) && matchVal(p[3],f.batch) && matchVal(p[4],f.dc);
+  // key: site|month|moda|batch|dc|bu
+  return matchVal(p[0],f.site) && matchVal(p[1],f.month) && matchVal(p[2],f.moda) && matchVal(p[3],f.batch) && matchVal(p[4],f.dc) && matchVal(p[5],f.bu);
 }
 
 function matchFRDayKey(k, f) {
   const p = k.split('|');
-  // key: site|month|moda|batch|dc|day
-  return matchVal(p[0],f.site) && matchVal(p[1],f.month) && matchVal(p[2],f.moda) && matchVal(p[3],f.batch) && matchVal(p[4],f.dc) && matchVal(String(p[5]),f.date);
+  // key: site|month|moda|batch|dc|bu|day
+  return matchVal(p[0],f.site) && matchVal(p[1],f.month) && matchVal(p[2],f.moda) && matchVal(p[3],f.batch) && matchVal(p[4],f.dc) && matchVal(p[5],f.bu) && matchVal(String(p[6]),f.date);
 }
 
 function matchFRVKey(k, f) {
   const p = k.split('|');
-  // key: site|month|moda|batch|dc|vendor
-  return matchVal(p[0],f.site) && matchVal(p[1],f.month) && matchVal(p[2],f.moda) && matchVal(p[3],f.batch) && matchVal(p[4],f.dc) && matchVal(p[5],f.vendor);
+  // key: site|month|moda|batch|dc|bu|vendor
+  return matchVal(p[0],f.site) && matchVal(p[1],f.month) && matchVal(p[2],f.moda) && matchVal(p[3],f.batch) && matchVal(p[4],f.dc) && matchVal(p[5],f.bu) && matchVal(p[6],f.vendor);
 }
 
 // ── FR STATS ──────────────────────────────────────────────────────────────────
@@ -2439,8 +2478,8 @@ function getFRDayStats(f) {
   } else {
     Object.entries(FR.daily).forEach(([k,v]) => {
       const p = k.split('|');
-      if(matchFRKey(k,f) && matchVal(String(p[5]),f.date)) {
-        const day = parseInt(p[5]);
+      if(matchFRKey(k,f) && matchVal(String(p[6]),f.date)) {
+        const day = parseInt(p[6]);
         if(!map[day]) map[day]={hit:0,mis:0};
         map[day].hit+=v.hit; map[day].mis+=v.mis;
       }
@@ -2601,6 +2640,7 @@ function buildFRTag(f) {
   const mo=fmtFilter(f.moda);  if(mo) parts.push(mo);
   const b=fmtFilter(f.batch);  if(b) parts.push(b);
   const d=fmtFilter(f.dc);     if(d) parts.push(d);
+  const bu=fmtFilter(f.bu);    if(bu) parts.push(bu);
   const v=fmtFilter(f.vendor); if(v) parts.push(v);
   const dt=fmtFilter(f.date,'Tgl '); if(dt) parts.push(dt);
   return parts.length?parts.join(' · '):'All Filter';
@@ -2634,6 +2674,7 @@ function initFR() {
   const f0 = getFRF();
   populateFRModas(f0);
   populateFRDCs(f0);
+  populateFRBUs(f0);
   populateFRVendors(f0);
   populateFRDays(f0);
   frApplyFilters();
@@ -2655,6 +2696,22 @@ function populateFRDCs(f) {
   }
 }
 
+function populateFRBUs(f) {
+  const cur = getMS('frMsBU'); // simpan seleksi sebelumnya
+  const seen=new Set();
+  Object.keys(FR.summary).forEach(k => { if(matchFRKey(k,{...f,bu:'ALL'})) seen.add(k.split('|')[5]); });
+  const opts = [...seen].sort();
+  buildMS('frMsBU', opts, 'BU');
+  // Restore previous selection where still valid
+  if (cur !== 'ALL') {
+    const valid = cur.filter(v => opts.includes(v));
+    if (valid.length > 0) {
+      const el = document.getElementById('frMsBU');
+      if(el) { el.querySelectorAll('input.ms-cb').forEach(cb => { cb.checked = valid.includes(cb.value); }); setMSLabel('frMsBU', 'BU'); }
+    }
+  }
+}
+
 function populateFRModas(f) {
   const seen=new Set();
   Object.keys(FR.summary).forEach(k => { if(matchFRKey(k,{...f,moda:'ALL'})) seen.add(k.split('|')[2]); });
@@ -2664,8 +2721,8 @@ function populateFRModas(f) {
 function populateFRVendors(f) {
   const cur = getMS('frMsVendor');
   const seen = new Set();
-  // vendor key: site|month|moda|batch|dc|vendor — matchFRKey checks [0-4] so 6-part key juga works
-  Object.keys(FR.vendor).forEach(k => { if(matchFRKey(k, f)) seen.add(k.split('|')[5]); });
+  // vendor key: site|month|moda|batch|dc|bu|vendor — matchFRKey checks [0-5] so 7-part key juga works
+  Object.keys(FR.vendor).forEach(k => { if(matchFRKey(k, f)) seen.add(k.split('|')[6]); });
   const opts = [...seen].sort();
   buildMS('frMsVendor', opts, 'Vendor');
   // Restore previous selection where still valid
@@ -2681,7 +2738,7 @@ function populateFRVendors(f) {
 function populateFRDays(f) {
   const cur = getMS('frMsDate'); // simpan seleksi sebelumnya
   const seen=new Set();
-  Object.keys(FR.daily).forEach(k => { if(matchFRKey(k,f)) seen.add(parseInt(k.split('|')[5])); });
+  Object.keys(FR.daily).forEach(k => { if(matchFRKey(k,f)) seen.add(parseInt(k.split('|')[6])); });
   const opts = [...seen].sort((a,b)=>a-b);
   buildMS('frMsDate', opts.map(String), 'Tgl');
   const el = document.getElementById('frMsDate');
@@ -2701,17 +2758,17 @@ function populateFRDays(f) {
 }
 
 function onFRFilterChange() {
-  const f=getFRF(); populateFRModas(f); populateFRDCs(f); populateFRVendors(f); populateFRDays(f); frApplyFilters();
+  const f=getFRF(); populateFRModas(f); populateFRDCs(f); populateFRBUs(f); populateFRVendors(f); populateFRDays(f); frApplyFilters();
 }
 
 function resetFRFilters() {
-  ['frMsSite','frMsMonth','frMsModa','frMsBatch','frMsDC','frMsVendor','frMsDate'].forEach(id => {
+  ['frMsSite','frMsMonth','frMsModa','frMsBatch','frMsDC','frMsBU','frMsVendor','frMsDate'].forEach(id => {
     const el = document.getElementById(id); if(!el) return;
     el.querySelectorAll('input').forEach(cb => { cb.checked=false; cb.indeterminate=false; });
     el.classList.remove('ms-active');
     const lbl = el.querySelector('.ms-label');
     if(lbl) {
-      const map={frMsSite:'Semua Site',frMsMonth:'Semua Bulan',frMsModa:'Semua Moda',frMsBatch:'Semua Batch',frMsDC:'Semua DC',frMsVendor:'Semua Vendor',frMsDate:'Semua Tgl'};
+      const map={frMsSite:'Semua Site',frMsMonth:'Semua Bulan',frMsModa:'Semua Moda',frMsBatch:'Semua Batch',frMsDC:'Semua DC',frMsBU:'Semua BU',frMsVendor:'Semua Vendor',frMsDate:'Semua Tgl'};
       lbl.textContent = map[id] || 'Semua';
     }
   });
