@@ -1021,8 +1021,8 @@ function getDayStats(f) {
   } else {
     Object.entries(D.daily).forEach(([k,v])=>{
       const p=k.split('|');
-      if(matchKey(k,f)&&matchVal(String(p[4]),f.date)){
-        const day=parseInt(p[4]);
+      if(matchKey(k,f)&&matchVal(String(p[5]),f.date)){
+        const day=parseInt(p[5]);
         if(!map[day]) map[day]={ot:0,late:0};
         map[day].ot+=v.ot; map[day].late+=v.late;
       }
